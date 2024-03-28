@@ -36,24 +36,80 @@ def get_bounding_box(pcd):
     return vertices, faces
 
 
-def save_faces(vertices, faces, output_path):
+def find_min_area_faces(vertices, faces):
     """
-    保存外接矩形的六个面的点云
+    找到最小面积的两个面
     """
-    face_data = np.zeros((24, 9))
+    face_areas = []
+    for face in faces:
+        face_vertices = [vertices[i] for i in face]
+        face_vertices = np.array(face_vertices)
+        v1 = face_vertices[1] - face_vertices[0]
+        v2 = face_vertices[2] - face_vertices[0]
+        area = np.linalg.norm(np.cross(v1, v2))
+        face_areas.append(area)
 
-    for i, face in enumerate(faces):
-        for j, vertex_idx in enumerate(face):
-            face_data[i * 4 + j, :3] = vertices[vertex_idx]
-            face_data[i * 4 + j, 3:6] = [1, 0, 0]  # 红色
+    min_area_indices = np.argsort(face_areas)[:2]
+    min_area_faces = [faces[i] for i in min_area_indices]
 
-    np.savetxt(f"{output_path}_sixface.txt", face_data, fmt='%.6f')
+    return min_area_faces
+
+
+def generate_line_points(vertices, min_area_faces, num_points=100, extend_ratio=0.1):
+    """
+    在最小面积的两个面的中心点之间生成一条直线点云
+    """
+    face1_center = np.mean([vertices[i] for i in min_area_faces[0]], axis=0)
+    face2_center = np.mean([vertices[i] for i in min_area_faces[1]], axis=0)
+
+    line_vector = face2_center - face1_center
+    line_length = np.linalg.norm(line_vector)
+    line_direction = line_vector / line_length
+
+    extended_length = line_length * (1 + 2 * extend_ratio)
+    start_point = face1_center - line_direction * line_length * extend_ratio
+    end_point = face2_center + line_direction * line_length * extend_ratio
+
+    line_points = np.linspace(start_point, end_point, num_points)
+
+    return line_points
+
+
+def calculate_radial_vectors(pcd, line_points):
+    """
+    计算每个点到中线的径向量,并将径向量在XYZ三个轴上的投影值保存在点云的第10、11、12列
+    """
+    pcd_points = np.asarray(pcd.points)
+    radial_vectors = []
+
+    for point in pcd_points:
+        dists = np.linalg.norm(line_points - point, axis=1)
+        closest_point_idx = np.argmin(dists)
+        closest_point = line_points[closest_point_idx]
+        radial_vector = point - closest_point
+        radial_vector /= np.linalg.norm(radial_vector)
+        radial_vectors.append(radial_vector)
+
+    radial_vectors = np.array(radial_vectors)
+    pcd_points = np.hstack((pcd_points, radial_vectors))
+
+    return pcd_points
+
+
+def save_point_cloud(pcd_points, output_path):
+    """
+    保存处理后的点云
+    """
+    np.savetxt(f"{output_path}_12.txt", pcd_points, fmt='%.6f', header='x y z r g b nx ny nz rx ry rz', comments='')
 
 
 def main(input_txt):
     pcd = o3d.io.read_point_cloud(input_txt, format='xyzrgb')
     vertices, faces = get_bounding_box(pcd)
-    save_faces(vertices, faces, input_txt.split(".")[0])
+    min_area_faces = find_min_area_faces(vertices, faces)
+    line_points = generate_line_points(vertices, min_area_faces)
+    pcd_points = calculate_radial_vectors(pcd, line_points)
+    save_point_cloud(pcd_points, input_txt.split(".")[0])
 
 
 if __name__ == "__main__":
