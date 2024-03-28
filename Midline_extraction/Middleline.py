@@ -96,6 +96,27 @@ def calculate_radial_vectors(pcd, line_points):
     return pcd_points
 
 
+def calculate_radial_vectors(pcd, line_points):
+    """
+    计算每个点到中线的径向量,并将径向量在XYZ三个轴上的投影值保存在点云的第10、11、12列
+    """
+    pcd_points = np.asarray(pcd.points)
+    radial_vectors = []
+
+    for point in pcd_points:
+        dists = np.linalg.norm(line_points - point, axis=1)
+        closest_point_idx = np.argmin(dists)
+        closest_point = line_points[closest_point_idx]
+        radial_vector = point - closest_point
+        radial_vector /= np.linalg.norm(radial_vector)
+        radial_vectors.append(radial_vector)
+
+    radial_vectors = np.array(radial_vectors)
+    pcd_points = np.hstack((pcd_points, radial_vectors))
+
+    return pcd_points
+
+
 def save_point_cloud(pcd_points, output_path):
     """
     保存处理后的点云
