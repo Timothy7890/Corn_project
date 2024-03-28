@@ -1,14 +1,17 @@
 import argparse
 import numpy as np
-from concurrent.futures import ThreadPoolExecutor
+import open3d as o3d
 
 
-def get_bounding_box(pcd_points):
+def get_bounding_box(pcd):
     """
-    从NumPy数组中计算点云的外接矩形边界框
+    获取点云的外接矩形边界框
     """
-    x_min, y_min, z_min = np.min(pcd_points, axis=0)
-    x_max, y_max, z_max = np.max(pcd_points, axis=0)
+    min_bound = pcd.get_min_bound()
+    max_bound = pcd.get_max_bound()
+
+    x_min, y_min, z_min = min_bound
+    x_max, y_max, z_max = max_bound
 
     vertices = [
         [x_min, y_min, z_min],
@@ -52,64 +55,43 @@ def find_min_area_faces(vertices, faces):
     return min_area_faces
 
 
-def generate_line_equation(vertices, min_area_faces):
+def generate_line_points(vertices, min_area_faces, num_points=100, extend_ratio=0.1):
     """
-    生成中线的解析方程
+    在最小面积的两个面的中心点之间生成一条直线点云
     """
     face1_center = np.mean([vertices[i] for i in min_area_faces[0]], axis=0)
     face2_center = np.mean([vertices[i] for i in min_area_faces[1]], axis=0)
 
-    line_direction = face2_center - face1_center
-    line_direction /= np.linalg.norm(line_direction)
+    line_vector = face2_center - face1_center
+    line_length = np.linalg.norm(line_vector)
+    line_direction = line_vector / line_length
 
-    point_on_line = face1_center
+    extended_length = line_length * (1 + 2 * extend_ratio)
+    start_point = face1_center - line_direction * line_length * extend_ratio
+    end_point = face2_center + line_direction * line_length * extend_ratio
 
-    return line_direction, point_on_line
+    line_points = np.linspace(start_point, end_point, num_points)
+
+    return line_points
 
 
-def calculate_radial_vector(point, line_direction, point_on_line):
+def save_line_points(line_points, output_path):
     """
-    计算单个点到中线的径向量
+    保存直线点云
     """
-    line_vector = line_direction
-    point_vector = point - point_on_line
+    line_data = np.zeros((len(line_points), 9))
+    line_data[:, :3] = line_points
+    line_data[:, 3:6] = [0, 0, 255]  # 蓝色 (RGB 范围: 0-255)
 
-    radial_vector = point_vector - np.dot(point_vector, line_vector) * line_vector
-    radial_vector /= np.linalg.norm(radial_vector)
-
-    return radial_vector
-
-
-def calculate_radial_vectors(pcd_points, line_direction, point_on_line):
-    """
-    使用多线程计算每个点到中线的径向量
-    """
-    with ThreadPoolExecutor() as executor:
-        radial_vectors = list(
-            executor.map(lambda point: calculate_radial_vector(point, line_direction, point_on_line), pcd_points))
-    return np.array(radial_vectors)
-
-
-def save_point_cloud(pcd_data, output_path):
-    """
-    保存处理后的点云
-    """
-    header = 'x y z r g b nx ny nz rx ry rz'
-    fmt = ['%.6f'] * 12
-    np.savetxt(f"{output_path}_12.txt", pcd_data, fmt=fmt, header=header, comments='')
+    np.savetxt(f"{output_path}_midline.txt", line_data, fmt='%.6f')
 
 
 def main(input_txt):
-    pcd_data = np.loadtxt(input_txt, skiprows=1)
-    pcd_points = pcd_data[:, :3]
-
-    vertices, faces = get_bounding_box(pcd_points)
+    pcd = o3d.io.read_point_cloud(input_txt, format='xyzrgb')
+    vertices, faces = get_bounding_box(pcd)
     min_area_faces = find_min_area_faces(vertices, faces)
-    line_direction, point_on_line = generate_line_equation(vertices, min_area_faces)
-    radial_vectors = calculate_radial_vectors(pcd_points, line_direction, point_on_line)
-
-    pcd_data = np.hstack((pcd_data, radial_vectors))
-    save_point_cloud(pcd_data, input_txt.split(".")[0])
+    line_points = generate_line_points(vertices, min_area_faces)
+    save_line_points(line_points, input_txt.split(".")[0])
 
 
 if __name__ == "__main__":
