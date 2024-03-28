@@ -3,46 +3,57 @@ import numpy as np
 import open3d as o3d
 
 
-def find_min_area_faces(pcd):
+def get_bounding_box(pcd):
     """
-    找到点云的最小外接矩形的最小面积的两个面
+    获取点云的外接矩形边界框
     """
-    obb = pcd.get_oriented_bounding_box()
-    obb_corners = np.asarray(obb.get_box_points())
-    areas = []
-    for i in range(0, len(obb_corners), 4):
-        face = obb_corners[i:i + 4]
-        area = np.linalg.norm(np.cross(face[1] - face[0], face[2] - face[0]))
-        areas.append(area)
-    min_area_indices = np.argsort(areas)[:2]
-    min_area_faces = [obb_corners[i:i + 4] for i in [min_area_indices[0] * 4, min_area_indices[1] * 4]]
-    return min_area_faces
+    min_bound = pcd.get_min_bound()
+    max_bound = pcd.get_max_bound()
+
+    x_min, y_min, z_min = min_bound
+    x_max, y_max, z_max = max_bound
+
+    vertices = [
+        [x_min, y_min, z_min],
+        [x_max, y_min, z_min],
+        [x_max, y_max, z_min],
+        [x_min, y_max, z_min],
+        [x_min, y_min, z_max],
+        [x_max, y_min, z_max],
+        [x_max, y_max, z_max],
+        [x_min, y_max, z_max],
+    ]
+
+    faces = [
+        [0, 1, 2, 3],  # 底面
+        [4, 5, 6, 7],  # 顶面
+        [0, 1, 5, 4],  # 前面
+        [2, 3, 7, 6],  # 后面
+        [0, 3, 7, 4],  # 左面
+        [1, 2, 6, 5],  # 右面
+    ]
+
+    return vertices, faces
 
 
-def visualize_line(pcd, min_area_faces, output_path):
+def save_faces(vertices, faces, output_path):
     """
-    将两个最小面积面的中心点连线可视化为蓝色点云,并保存为txt文件
+    保存外接矩形的六个面的点云
     """
-    face1 = min_area_faces[0]
-    face2 = min_area_faces[1]
-    center1 = np.mean(face1, axis=0)
-    center2 = np.mean(face2, axis=0)
-    line_points = np.stack([center1, center2], axis=0)
-    line_pcd = o3d.geometry.PointCloud()
-    line_pcd.points = o3d.utility.Vector3dVector(line_points)
-    line_pcd.paint_uniform_color([0, 0, 1])  # 蓝色
-    o3d.visualization.draw_geometries([pcd, line_pcd])
+    face_data = np.zeros((24, 9))
 
-    line_data = np.zeros((len(line_points), 9))
-    line_data[:, :3] = line_points
-    line_data[:, 3:6] = [0, 0, 1]  # RGB值为蓝色
-    np.savetxt(f"{output_path}_middleline.txt", line_data, fmt='%.6f')
+    for i, face in enumerate(faces):
+        for j, vertex_idx in enumerate(face):
+            face_data[i * 4 + j, :3] = vertices[vertex_idx]
+            face_data[i * 4 + j, 3:6] = [1, 0, 0]  # 红色
+
+    np.savetxt(f"{output_path}_sixface.txt", face_data, fmt='%.6f')
 
 
 def main(input_txt):
-    pcd = o3d.io.read_point_cloud(input_txt, format='xyz')
-    min_area_faces = find_min_area_faces(pcd)
-    visualize_line(pcd, min_area_faces, input_txt.split(".")[0])
+    pcd = o3d.io.read_point_cloud(input_txt, format='xyzrgb')
+    vertices, faces = get_bounding_box(pcd)
+    save_faces(vertices, faces, input_txt.split(".")[0])
 
 
 if __name__ == "__main__":
