@@ -85,6 +85,12 @@ def save_line_points(line_points, output_path):
 
     np.savetxt(f"{output_path}_midline.txt", line_data, fmt='%.6f')
 
+def extract_midline(input_txt, num_points=100, extend_ratio=0.1):
+    pcd = o3d.io.read_point_cloud(input_txt, format='xyzrgb')
+    vertices, faces = get_bounding_box(pcd)
+    min_area_faces = find_min_area_faces(vertices, faces)
+    line_points = generate_line_points(vertices, min_area_faces, num_points, extend_ratio)
+    save_line_points(line_points, input_txt.split(".")[0])
 
 def main(input_txt):
     pcd = o3d.io.read_point_cloud(input_txt, format='xyzrgb')
