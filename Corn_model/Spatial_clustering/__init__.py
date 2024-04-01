@@ -1,1 +1,1 @@
-from  Sc_pipeline import *
+from .Sc_pipeline import *

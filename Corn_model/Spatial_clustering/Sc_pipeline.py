@@ -6,7 +6,7 @@ from .cluster import cluster_point_cloud
 def run_Spatial_clustering_pipeline(input_txt, eps=0.4, threshold=0.8):
     output_12 = f"{input_txt.split('.')[0]}_12.txt"
     output_13 = f"{input_txt.split('.')[0]}_13.txt"
-    output_clustered = f"{input_txt.split('.')[0]}_clustered.txt"
+    output_clustered = f"{input_txt.split('.')[0]}_DBSCAN_clustered.txt"
 
     print("任务一:正在计算径向量...")
     process_point_cloud_12(input_txt, output_12)

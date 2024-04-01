@@ -92,7 +92,7 @@ def save_point_cloud(pcd_data, output_path):
     保存处理后的点云
     """
     header = 'x y z r g b nx ny nz rx ry rz'
-    fmt = ['%.6f'] * 6 + ['%d'] * 3 + ['%.6f'] * 3
+    fmt = ['%.6f'] * 3 + ['%d'] * 3 + ['%.6f'] * 6
     np.savetxt(output_path, pcd_data, fmt=fmt, header=header, comments='')
 
 def process_point_cloud_12(input_txt, output_txt):
