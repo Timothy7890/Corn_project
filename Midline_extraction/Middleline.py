@@ -81,9 +81,12 @@ def save_line_points(line_points, output_path):
     """
     line_data = np.zeros((len(line_points), 9))
     line_data[:, :3] = line_points
-    line_data[:, 3:6] = [0, 0, 255]  # 蓝色 (RGB 范围: 0-255)
+    line_data[:, 3:6] = [79, 195, 247]  # 蓝色 (RGB 范围: 0-255)
 
-    np.savetxt(f"{output_path}_midline.txt", line_data, fmt='%.6f')
+    # 将 RGB 分量保留为整数
+    line_data[:, 3:6] = line_data[:, 3:6].astype(int)
+
+    np.savetxt(f"{output_path}_midline.txt", line_data, fmt='%.6f %.6f %.6f %d %d %d %.6f %.6f %.6f')
 
 def extract_midline(input_txt, num_points=100, extend_ratio=0.1):
     pcd = o3d.io.read_point_cloud(input_txt, format='xyzrgb')
