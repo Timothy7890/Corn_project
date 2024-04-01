@@ -8,6 +8,6 @@ if __name__ == "__main__":
     num_points = 20000
 
     # 直线延伸的比例
-    extend_ratio = 0.2
+    extend_ratio = 0.05
 
     extract_midline(input_txt, num_points, extend_ratio)
