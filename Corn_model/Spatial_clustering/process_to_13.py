@@ -21,7 +21,7 @@ def process_point_cloud(pcd_data):
 
 def save_point_cloud(pcd_data, output_path):
     header = 'x y z r g b nx ny nz rx ry rz cosine'
-    fmt = ['%.6f'] * 13
+    fmt = ['%.6f'] * 6 + ['%d'] * 3 + ['%.6f'] * 4
     np.savetxt(output_path, pcd_data, fmt=fmt, header=header, comments='')
 
 def process_point_cloud_13(input_txt, output_txt):

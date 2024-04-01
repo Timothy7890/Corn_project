@@ -42,8 +42,8 @@ def save_colored_data(colored_data, output_path):
     保存着色后的点云数据
     """
     header = 'x y z semantic cluster_label r g b'
-    fmt = '%.6f %.6f %.6f %d %d %d %d %d'
-    np.savetxt(f"{output_path}_DBSCAN.txt", colored_data, fmt=fmt, header=header, comments='')
+    fmt = '%.6f %.6f %.6f %.6f %.6f %d %d %d'
+    np.savetxt(output_path, colored_data, fmt=fmt, header=header, comments='')
 
 def cluster_point_cloud(input_txt, output_txt, eps=0.4, threshold=0.8):
     pcd_data = np.loadtxt(input_txt, skiprows=1)
