@@ -1,4 +1,4 @@
-from Midline_extraction import extract_midline
+from Corn_model.Midline_extraction import extract_midline
 
 """
 此代码为一键执行代码，可以直接生成中轴线；
