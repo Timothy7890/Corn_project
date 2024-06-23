@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 from tqdm import tqdm  # 需要安装 tqdm 库
+import os
 
 def calculate_cosine(normal, radial):
     dot_product = np.dot(normal, radial)
@@ -25,6 +26,10 @@ def save_point_cloud(pcd_data, output_path):
     np.savetxt(output_path, pcd_data, fmt=fmt, header=header, comments='')
 
 def process_point_cloud_13(input_txt, output_txt):
+    if os.path.exists(output_txt):
+        print(f"{output_txt}已存在，无需重复执行计算径向量与法向量的夹角。")
+        return
+    print("任务二:正在计算径向量与法向量的夹角...")
     pcd_data = np.loadtxt(input_txt, skiprows=1)
     processed_data = process_point_cloud(pcd_data)
     save_point_cloud(processed_data, output_txt)

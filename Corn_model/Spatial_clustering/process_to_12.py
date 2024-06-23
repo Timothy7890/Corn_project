@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 from tqdm import tqdm
+import os
 
 def get_bounding_box(pcd_points):
     """
@@ -96,6 +97,10 @@ def save_point_cloud(pcd_data, output_path):
     np.savetxt(output_path, pcd_data, fmt=fmt, header=header, comments='')
 
 def process_point_cloud_12(input_txt, output_txt):
+    if os.path.exists(output_txt):
+        print(f"{output_txt}已存在，无需重复执行计算径向量。")
+        return
+    print("任务一:正在计算径向量...")
     pcd_data = np.loadtxt(input_txt, skiprows=1)
     pcd_points = pcd_data[:, :3]
 
