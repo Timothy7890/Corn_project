@@ -2,15 +2,6 @@
 
 
 
-## Note
-
-由于Data_demo数据量较大，无法上传github，故使用网盘的形式提供下载：
-
-```
-https://pan.baidu.com/s/14hbUngh-jb-0HHpCl46lpQ?pwd=32uc
-提取码: 32uc 
-```
-
 ## 代码架构如下：
 
 ```
