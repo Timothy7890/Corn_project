@@ -8,7 +8,7 @@ from Corn_model.Spatial_clustering import run_Spatial_clustering_pipeline
 
 if __name__ == "__main__":
 
-    input_txt = "/home/timo/音乐/DELETE/预处理/02/Corn_02.txt"
+    input_txt = r"D:\004_Shidi\007_ZhaoYaqin\corn_project\data\raw_txt\Corn_02.txt"
 
     eps = 0.4
 
